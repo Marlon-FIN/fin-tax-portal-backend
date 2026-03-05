@@ -10,6 +10,9 @@ export default defineConfig({
     setupFiles: ['tests/integration/setup.ts'],
     env: {
       JWT_SECRET: 'test-secret-do-not-use-in-production',
+      STORAGE_PROVIDER: 'mock',
+      SIGNED_URL_TTL: '60',
+      DOWNLOAD_RATE_LIMIT_MAX: '2',
     },
   },
 });
