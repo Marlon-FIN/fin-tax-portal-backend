@@ -29,11 +29,14 @@ enum TrafficLightStatus {
 
 enum TaxReturnStatus {
   DRAFT
-  SUBMITTED
+  PENDING
   ACCEPTED
   REJECTED
   WITHDRAWN
 }
+
+// TODO: Rename Role values to FIN_MANDATSLEITER / FIN_SACHBEARBEITER once
+// confirmed with product — currently mapped: ADMIN=FIN_MANDATSLEITER, ADVISOR=FIN_SACHBEARBEITER
 
 enum TaskStatus {
   RED
@@ -132,17 +135,18 @@ model Questionnaire {
 }
 
 model Task {
-  id             String     @id @default(cuid())
-  caseId         String
-  rubric         Rubric
-  status         TaskStatus @default(RED)
-  isActive       Boolean    @default(true)
-  source         String?
+  id              String     @id @default(cuid())
+  caseId          String
+  rubric          Rubric
+  status          TaskStatus @default(RED)
+  isActive        Boolean    @default(true)
+  source          String?
   carryForwardKey String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  case Case @relation(fields: [caseId], references: [id])
+  case     Case      @relation(fields: [caseId], references: [id])
+  wrappers Wrapper[]
 
   @@index([caseId])
   @@index([rubric])
@@ -152,13 +156,17 @@ model Task {
 model Wrapper {
   id        String   @id @default(cuid())
   caseId    String
+  name      String?
+  taskId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   case      Case       @relation(fields: [caseId], references: [id])
+  task      Task?      @relation(fields: [taskId], references: [id])
   documents Document[]
 
   @@index([caseId])
+  @@index([taskId])
 }
 
 model Document {
