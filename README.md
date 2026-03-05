@@ -35,6 +35,34 @@ docker-compose up -d
 
 Datenbank läuft auf: `postgresql://fin:fin_local@localhost:5432/fin_tax_portal`
 
-## Nächster Schritt
+## Setup
 
-Prisma Schema erstellen → siehe `../fin-tax-portal-specs/CLAUDE_PROMPTS.md` Prompt 3.
+```bash
+# 1. Abhängigkeiten installieren
+npm install
+
+# 2. Datenbank starten
+docker compose up -d
+
+# 3. Prisma Client generieren + erste Migration ausführen
+npx prisma migrate dev --name init
+
+# 4. Server starten
+npm run dev
+```
+
+Server läuft auf: `http://localhost:3000`
+Health-Check: `GET http://localhost:3000/health` → `{ "status": "ok" }`
+
+## Prisma
+
+```bash
+# Client neu generieren (nach Schema-Änderungen)
+npx prisma generate
+
+# Migration erstellen
+npx prisma migrate dev --name <name>
+
+# DB-Studio öffnen
+npx prisma studio
+```
