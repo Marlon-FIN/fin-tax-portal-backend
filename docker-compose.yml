@@ -1,18 +1,31 @@
-version: '3.9'
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: fin-tax-portal-db
+  db:
+    image: postgres:16
+    container_name: fin_postgres
     restart: unless-stopped
     environment:
+      POSTGRES_DB: fin_dev
       POSTGRES_USER: fin
-      POSTGRES_PASSWORD: fin_local
-      POSTGRES_DB: fin_tax_portal
+      POSTGRES_PASSWORD: fin_dev_pw_change_me
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - fin_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fin -d fin_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  adminer:
+    image: adminer:4
+    container_name: fin_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  postgres_data:
+  fin_pgdata:
