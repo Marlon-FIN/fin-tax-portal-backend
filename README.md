@@ -4,9 +4,9 @@ Node.js + TypeScript + Prisma + PostgreSQL
 
 ## Specs
 
-Alle Spezifikationen sind in einem separaten Repo:
-→ https://github.com/Marlon-FIN/fin-tax-portal-specs (spec-v1.0)
+**Specs: fin-tax-portal-specs @ spec-v1.0**
 
+→ https://github.com/Marlon-FIN/fin-tax-portal-specs
 Lokaler Pfad: `../fin-tax-portal-specs`
 
 ## Struktur
