@@ -26,6 +26,15 @@ Lokaler Pfad: `../fin-tax-portal-specs`
 | Datenbank | PostgreSQL |
 | Tests | Vitest + Supertest |
 
+## Lokale Datenbank starten
+
+```bash
+cp .env.example .env
+docker-compose up -d
+```
+
+Datenbank läuft auf: `postgresql://fin:fin_local@localhost:5432/fin_tax_portal`
+
 ## Nächster Schritt
 
-Prisma Schema erstellen → siehe `../fin-tax-portal-specs/CLAUDE_PROMPTS.md` Prompt 2.
+Prisma Schema erstellen → siehe `../fin-tax-portal-specs/CLAUDE_PROMPTS.md` Prompt 3.
