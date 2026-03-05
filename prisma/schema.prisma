@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  ADVISOR
+  CUSTOMER
+}
+
+enum MasterDataStatus {
+  PENDING
+  COMPLETE
+  INCOMPLETE
+}
+
+enum TrafficLightStatus {
+  RED
+  YELLOW
+  GREEN
+}
+
+enum TaxReturnStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TaskStatus {
+  RED
+  GREEN
+}
+
+enum Rubric {
+  PERSONAL_DATA
+  INCOME
+  DEDUCTIONS
+  ASSETS
+  REAL_ESTATE
+  OTHER
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Account {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerProfile CustomerProfile?
+  caseParticipants CaseParticipant[]
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  uploadedDocuments Document[] @relation("UploadedBy")
+
+  @@index([email])
+}
+
+model CustomerProfile {
+  id               String           @id @default(cuid())
+  accountId        String           @unique
+  ahvNumber        String           @unique
+  masterDataStatus MasterDataStatus @default(PENDING)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id])
+  cases   Case[]
+
+  @@index([ahvNumber])
+}
+
+model Case {
+  id                  String             @id @default(cuid())
+  customerProfileId   String
+  taxYear             Int
+  trafficLightStatus  TrafficLightStatus @default(RED)
+  taxReturnStatus     TaxReturnStatus    @default(DRAFT)
+  isFrozen            Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  customerProfile  CustomerProfile   @relation(fields: [customerProfileId], references: [id])
+  participants     CaseParticipant[]
+  questionnaires   Questionnaire[]
+  tasks            Task[]
+  wrappers         Wrapper[]
+  taxReturnDrafts  TaxReturnDraft[]
+  archiveRecords   ArchiveRecord[]
+
+  @@index([customerProfileId])
+  @@index([taxYear])
+  @@index([trafficLightStatus])
+  @@index([taxReturnStatus])
+}
+
+model CaseParticipant {
+  id        String   @id @default(cuid())
+  caseId    String
+  accountId String
+  createdAt DateTime @default(now())
+
+  case    Case    @relation(fields: [caseId], references: [id])
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([caseId, accountId])
+  @@index([caseId])
+  @@index([accountId])
+}
+
+model Questionnaire {
+  id          String   @id @default(cuid())
+  caseId      String
+  answersJson Json     @default("{}")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
+}
+
+model Task {
+  id             String     @id @default(cuid())
+  caseId         String
+  rubric         Rubric
+  status         TaskStatus @default(RED)
+  isActive       Boolean    @default(true)
+  source         String?
+  carryForwardKey String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  case Case @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
+  @@index([rubric])
+  @@index([status])
+}
+
+model Wrapper {
+  id        String   @id @default(cuid())
+  caseId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  case      Case       @relation(fields: [caseId], references: [id])
+  documents Document[]
+
+  @@index([caseId])
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  wrapperId   String
+  mimeType    String
+  storageKey  String
+  uploadedById String
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  wrapper     Wrapper  @relation(fields: [wrapperId], references: [id])
+  uploadedBy  Account  @relation("UploadedBy", fields: [uploadedById], references: [id])
+  deletedDocument DeletedDocument?
+  taxReturnAttachmentConfigs TaxReturnAttachmentConfig[]
+
+  @@index([wrapperId])
+  @@index([uploadedById])
+}
+
+model DeletedDocument {
+  id          String   @id @default(cuid())
+  documentId  String   @unique
+  restoreable Boolean  @default(true)
+  deletedAt   DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id])
+}
+
+model TaxReturnDraft {
+  id              String    @id @default(cuid())
+  caseId          String
+  uploadedPdfKey  String?
+  publishedAt     DateTime?
+  withdrawnAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  case        Case                       @relation(fields: [caseId], references: [id])
+  attachments TaxReturnAttachmentConfig[]
+
+  @@index([caseId])
+}
+
+model TaxReturnAttachmentConfig {
+  id               String @id @default(cuid())
+  taxReturnDraftId String
+  documentId       String
+  pageSelection    Json?
+  orderIndex       Int    @default(0)
+
+  taxReturnDraft TaxReturnDraft @relation(fields: [taxReturnDraftId], references: [id])
+  document       Document       @relation(fields: [documentId], references: [id])
+
+  @@index([taxReturnDraftId])
+  @@index([documentId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorAccountId String
+  action        String
+  entityType    String
+  entityId      String
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  actor Account @relation(fields: [actorAccountId], references: [id])
+
+  @@index([actorAccountId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  accountId String
+  title     String
+  body      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+}
+
+model ArchiveRecord {
+  id             String   @id @default(cuid())
+  caseId         String
+  zipStorageKey  String
+  retentionUntil DateTime
+  createdAt      DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [id])
+
+  @@index([caseId])
+}
